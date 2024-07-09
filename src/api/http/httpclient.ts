@@ -6,9 +6,8 @@ import axios, {
 } from "axios";
 
 const AxiosConfig: AxiosRequestConfig = {
-  baseURL: "http://localhost:3000",
+  baseURL: "http://localhost:3000/todo",
   timeout: 10 * 1000,
-  withCredentials: true,
 };
 
 export interface BaseResponse<T = any> {

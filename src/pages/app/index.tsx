@@ -1,28 +1,57 @@
 import { Button, Input, Space } from "antd";
 import "./index.less";
-import { ProTable } from "@ant-design/pro-components";
-import { ChangeEvent, useEffect, useState } from "react";
+import {
+  ActionType,
+  ProColumnType,
+  ProTable,
+} from "@ant-design/pro-components";
+import { ChangeEvent, useRef, useState } from "react";
 import api from "@/api";
+import { Todo } from "../entity";
 
 function App() {
   const [taskTitle, setTaskTile] = useState<string>("");
+  const tableRef = useRef<ActionType>();
+
+  const columns: ProColumnType<Todo>[] = [
+    {
+      title: "序号",
+      dataIndex: "index",
+      valueType: "index",
+    },
+    { title: "任务名称", dataIndex: "title" },
+    {
+      title: "是否完成",
+      dataIndex: "completed",
+      render: (value) => <span>{value ? "是" : "否"}</span>,
+    },
+    {
+      title: "操作",
+      render: (_, entity: Todo) => (
+        <Space>
+          <a>标记完成</a>
+          <a onClick={() => handleDelete(entity.id!)}>删除</a>
+        </Space>
+      ),
+    },
+  ];
+
+  const handleDelete = async (id: number) => {
+    const res: any = await api.remove(id);
+    if (res.code === 200) reloadTable();
+  };
 
   const handleAddTask = async () => {
     const res: any = await api.insert({ title: taskTitle, completed: false });
-    console.log("todo-insert",res)
+    if (res.code === 200) reloadTable();
   };
 
   const handleInputTask = (e: ChangeEvent<HTMLInputElement>) => {
     setTaskTile(e.target.value);
   };
 
-  useEffect(() => {
-    getList();
-  }, []);
-
-  const getList = async () => {
-    const res: any = await fetch("http://localhost:3000/todo/getAll");
-    console.log("zsl-88", res.json());
+  const reloadTable = () => {
+    tableRef.current?.reload();
   };
 
   return (
@@ -35,7 +64,21 @@ function App() {
           </Button>
         </Space.Compact>
       </div>
-      <ProTable options={false} search={false} />
+      <ProTable
+        rowKey="id"
+        actionRef={tableRef}
+        options={false}
+        search={false}
+        columns={columns}
+        request={async () => {
+          const res: any = await api.getAll();
+          return {
+            success: res.code === 200,
+            total: res.data.length,
+            data: res.data,
+          };
+        }}
+      />
     </div>
   );
 }
